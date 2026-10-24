@@ -9,6 +9,9 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
+#include "cpr/cpr.h"
+#include "json.hpp"
+#include <string>
 
 static std::string filePath;
 static std::vector<std::vector<std::string>> csvData;
@@ -156,8 +159,35 @@ int main() {
             showSecondaryWindow = true;
         }
         if(showSecondaryWindow){
-            ImGui::Begin("Second Window", &showSecondaryWindow);
-            ImGui::Text("This is a new window!");
+            ImGui::Begin("Random Joke GFetcher", &showSecondaryWindow);
+            
+            if(ImGui::Buttom("Get Random Joke")){
+                try{
+                    auto r = cpr::Get(cpr::Url{"https://official-joke-api.appspot.com/random_joke"});
+                    if(r.status_code == 200){
+                        auto data = json::parse(r.text);
+                        setup = data["setup"];
+                        punchline = data["punchline"];
+                        status = "✅ Success!";
+                    } else {
+                        status = "❌ Http error: " + std::to_string(r.status_code);
+                    }
+                } catch(const std::exception& e){
+                    status = std::string("⚠️ Error: ") + e.what();
+                }
+
+            }
+            if(!status.empty()){
+                ImGui::TextWrapped("Status: %s", status.c_str());
+            }
+
+            if (!setup.empty())
+            {
+                ImGui::Separator();
+                ImGui::TextWrapped("Setup: %s", setup.c_str());
+                ImGui::TextWrapped("Punchline: %s", punchline.c_str());
+            }
+
             if(ImGui::Button("Close"))
                 showSecondaryWindow = false;
             ImGui::End();
